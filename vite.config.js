@@ -4,6 +4,6 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  // base: '/HS2025-React-task2/'
-  base: './'
+  base: '/HS2025-React-task2/'
+  // base: './'
 })
