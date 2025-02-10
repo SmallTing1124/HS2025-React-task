@@ -127,6 +127,12 @@ function App() {
   const handleCloseProductModal = () => {
     const modalInstance = Modal.getInstance(productModalRef.current);
     modalInstance.hide();
+    productModalRef.current.addEventListener('hidden.bs.modal', () => {
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+    });
+   
   };
 
   const handleOpenDelProductModal = (product) => {
@@ -138,6 +144,12 @@ function App() {
   const handleCloseDelProductModal = () => {
     const modalInstance = Modal.getInstance(delProductModalRef.current);
     modalInstance.hide();
+
+    delProductModalRef.current.addEventListener('hidden.bs.modal', () => {
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+    });
   };
 
   const handleModalInputChange = (e) => {
@@ -187,9 +199,14 @@ function App() {
           is_enabled: tempProduct.is_enabled ? 1 : 0,
         },
       });
+      getProducts();
+      handleCloseProductModal();
     } catch (error) {
-      console.log(error);
-      alert('新增商品失敗');
+      if (error.response && error.response.data) {
+        alert(`新增商品失敗：${error.response.data.message}`);
+      } else {
+        console.log(error);
+      }
     }
   };
 
@@ -206,9 +223,10 @@ function App() {
           },
         }
       );
+      getProducts();
+      handleCloseProductModal();
     } catch (error) {
-      console.log(error.response.data);
-      alert(`修改商品失敗`);
+      alert(`修改商品失敗:${error.response.data.message}`);
     }
   };
 
@@ -218,20 +236,15 @@ function App() {
         `${BASE_URL}/api/${API_PATH}/admin/product/${tempProduct.id}`
       );
     } catch (error) {
-      console.log(error.response.data);
-      alert(`修改商品失敗`);
+      alert(`修改商品失敗：${error.response.data.message}`);
     }
   };
 
   const handleUpdateProduct = async () => {
-    const apiCall = modalMode === 'create' ? createProduct : updateProduct;
-    try {
-      await apiCall();
-      getProducts();
-      handleCloseProductModal();
-    } catch (error) {
-      console.log(error);
-      alert('更新商品失敗');
+    if (modalMode === 'create') {
+      await createProduct();
+    } else {
+      await updateProduct();
     }
   };
 
@@ -530,6 +543,7 @@ function App() {
                         type="number"
                         className="form-control"
                         placeholder="請輸入原價"
+                        min="0"
                         required
                       />
                     </div>
@@ -545,6 +559,7 @@ function App() {
                         type="number"
                         className="form-control"
                         placeholder="請輸入售價"
+                        min="0"
                         required
                       />
                     </div>
