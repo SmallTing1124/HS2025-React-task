@@ -27,6 +27,7 @@ function App() {
   });
 
   const [products, setProducts] = useState([]);
+  const [pageInfo, setPageInfo] = useState({});
   const handleInputChange = (e) => {
     const { value, name } = e.target;
     setAccount({
@@ -35,19 +36,23 @@ function App() {
     });
   };
 
-  const getProducts = async () => {
+  const getProducts = async (page) => {
     try {
       // 取得產品資料
       const productsRes = await axios.get(
-        `${BASE_URL}/api/${API_PATH}/admin/products`
+        `${BASE_URL}/api/${API_PATH}/admin/products?page=${page}`
       );
       setProducts(productsRes.data.products);
+      setPageInfo(productsRes.data.pagination);
     } catch (error) {
       console.log(error);
       alert('取得產品失敗');
     }
   };
 
+  const handlePageChange = (page) => {
+    getProducts(page);
+  };
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
@@ -131,7 +136,6 @@ function App() {
         document.activeElement.blur();
       }
     });
-   
   };
 
   const handleOpenDelProductModal = (product) => {
@@ -258,13 +262,35 @@ function App() {
     }
   };
 
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    const formData = new FormData();
+    formData.append('file-to-upload', file);
+
+    try {
+      const res = await axios.post(
+        `${BASE_URL}/api/${API_PATH}/admin/upload`,
+        formData
+      );
+      const uploadedImageUrl = res.data.imageUrl;
+
+      setTempProduct({
+        ...tempProduct,
+        imageUrl:uploadedImageUrl
+      })
+
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   return (
     <>
       {isAuth ? (
         <div className="container">
-          <div className="row mt-5 justify-content">
+          <div className="row mt-5 justify-content-center">
             <div className="col-lg-10">
-              <div className="d-flex justify-content-between align-items-end">
+              <div className="d-flex justify-content-between align-items-end mb-4">
                 <h2 className="mt-5">產品列表</h2>
                 <button
                   type="button"
@@ -338,6 +364,59 @@ function App() {
                   })}
                 </tbody>
               </table>
+
+              <nav aria-label="Page navigation example">
+                <ul className="pagination justify-content-end">
+                  <li
+                    className={`page-item ${!pageInfo.has_pre && 'disabled'}`}
+                  >
+                    <a
+                      className="page-link"
+                      href="#"
+                      onClick={() =>
+                        handlePageChange(pageInfo.current_page - 1)
+                      }
+                    >
+                      上一頁
+                    </a>
+                  </li>
+                  {/* {JSON.stringify(pageInfo)} */}
+                  {/* {"total_pages":2,"current_page":1,"has_pre":false,"has_next":true,"category":""} */}
+
+                  {[...Array(pageInfo.total_pages).keys()].map((num) => {
+                    return (
+                      <li
+                        key={num}
+                        className={`page-item  ${
+                          pageInfo.current_page === num + 1 && 'active'
+                        } `}
+                      >
+                        <a
+                          className="page-link"
+                          onClick={() => handlePageChange(num + 1)}
+                          href="#"
+                        >
+                          {num + 1}
+                        </a>
+                      </li>
+                    );
+                  })}
+
+                  <li
+                    className={`page-item ${!pageInfo.has_next && 'disabled'}`}
+                  >
+                    <a
+                      className="page-link"
+                      href="#"
+                      onClick={() =>
+                        handlePageChange(pageInfo.current_page + 1)
+                      }
+                    >
+                      下一頁
+                    </a>
+                  </li>
+                </ul>
+              </nav>
             </div>
           </div>
         </div>
@@ -401,10 +480,20 @@ function App() {
               <div className="row g-4">
                 <div className="col-md-4">
                   <div className="mb-4">
-                    <label htmlFor="primary-image" className="form-label">
-                      主圖
-                    </label>
-                    <div className="input-group">
+                    <div className="mb-5">
+                      <label htmlFor="fileInput" className="form-label">
+                        圖片上傳
+                      </label>
+                      <input
+                        type="file"
+                        accept=".jpg,.jpeg,.png"
+                        className="form-control"
+                        id="fileInput"
+                        name="file-to-upload"
+                        onChange={(e) => handleFileChange(e)}
+                      />
+                    </div>
+                    {/* <div className="input-group">
                       <input
                         value={tempProduct.imageUrl}
                         onChange={handleModalInputChange}
@@ -415,7 +504,7 @@ function App() {
                         placeholder="請輸入圖片連結"
                         required
                       />
-                    </div>
+                    </div> */}
 
                     <div className="border rounded text-center bg-dark mt-2 overflow-hidden">
                       <img
@@ -518,7 +607,7 @@ function App() {
                       單位
                     </label>
                     <input
-                      value={tempProduct.name}
+                      value={tempProduct.unit}
                       onChange={handleModalInputChange}
                       name="unit"
                       id="unit"
